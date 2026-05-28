@@ -46,6 +46,9 @@ export default function Home() {
   const [fetchingLocations, setFetchingLocations] = useState(false);
   const [lastFetchCount, setLastFetchCount] = useState<number | null>(null);
 
+  // user geolocation for map centering
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
   // load localStorage
   useEffect(() => {
     setPins(loadPins());
@@ -147,6 +150,7 @@ export default function Home() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
+        setUserLocation({ lat, lng }); // fly map to user immediately
         setFetchingLocations(true);
         setLastFetchCount(null);
 
@@ -324,6 +328,7 @@ export default function Home() {
             onSelectPin={(id) => setSelectedPinId(id)}
             pickMode={pickMode}
             onPickLocationForNewPin={onPickLocationForNewPin}
+            flyToLocation={userLocation}
           />
 
           {/* RIGHT DETAILS PANEL */}

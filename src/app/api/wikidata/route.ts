@@ -11,14 +11,22 @@ async function wdSearchEntityId(query: string) {
     encodeURIComponent(query) +
     `&language=en&format=json&limit=1`;
 
-  const r = await fetch(url, {
-    headers: { "User-Agent": "FilmedHere/1.0 (student project)" },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
 
-  if (!r.ok) return null;
-  const data = await r.json();
-  const id = data?.search?.[0]?.id as string | undefined;
-  return id ?? null; // ex: "Q11335"
+  try {
+    const r = await fetch(url, {
+      headers: { "User-Agent": "FilmedHere/1.0 (student project)" },
+      signal: controller.signal,
+    });
+
+    if (!r.ok) return null;
+    const data = await r.json();
+    const id = data?.search?.[0]?.id as string | undefined;
+    return id ?? null; // ex: "Q11335"
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function parseCoord(coord?: string) {
@@ -139,18 +147,26 @@ LIMIT 120
 }
 
 async function runSparql(query: string) {
-  const r = await fetch(WDQS + "?format=json&query=" + encodeURIComponent(query), {
-    headers: {
-      "User-Agent": "FilmedHere/1.0 (student project)",
-      Accept: "application/sparql-results+json",
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12_000);
 
-  if (!r.ok) {
-    const text = await r.text();
-    throw new Error(`WDQS error ${r.status}: ${text.slice(0, 400)}`);
+  try {
+    const r = await fetch(WDQS + "?format=json&query=" + encodeURIComponent(query), {
+      headers: {
+        "User-Agent": "FilmedHere/1.0 (student project)",
+        Accept: "application/sparql-results+json",
+      },
+      signal: controller.signal,
+    });
+
+    if (!r.ok) {
+      const text = await r.text();
+      throw new Error(`WDQS error ${r.status}: ${text.slice(0, 400)}`);
+    }
+    return r.json();
+  } finally {
+    clearTimeout(timeout);
   }
-  return r.json();
 }
 
 export async function GET(req: Request) {

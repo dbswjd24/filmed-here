@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
 import { Pin } from "./types";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
@@ -13,12 +12,14 @@ export function MapView({
   onSelectPin,
   onPickLocationForNewPin,
   pickMode,
+  flyToLocation,
 }: {
   pins: Pin[];
   selectedId: string | null;
   onSelectPin: (id: string) => void;
   pickMode: boolean;
   onPickLocationForNewPin: (lat: number, lng: number) => void;
+  flyToLocation?: { lat: number; lng: number } | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -77,7 +78,7 @@ export function MapView({
     }
   }, [pins, selectedId, onSelectPin]);
 
-  // fly to selected
+  // fly to selected pin
   useEffect(() => {
     if (!selectedId) return;
     const map = mapRef.current;
@@ -85,6 +86,14 @@ export function MapView({
     if (!map || !pin) return;
     map.flyTo({ center: [pin.lng, pin.lat], zoom: 14 });
   }, [selectedId, pins]);
+
+  // fly to explicit location (e.g. user's geolocation)
+  useEffect(() => {
+    if (!flyToLocation) return;
+    const map = mapRef.current;
+    if (!map) return;
+    map.flyTo({ center: [flyToLocation.lng, flyToLocation.lat], zoom: 13 });
+  }, [flyToLocation]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }
